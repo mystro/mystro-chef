@@ -1,8 +1,6 @@
 require "mystro-common"
 require "chef"
 
-Ridley::Logging.logger.level = Logger.const_get 'ERROR'
-
 module Mystro
   module Plugin
     module Chef
@@ -20,13 +18,6 @@ module Mystro
         def configure
           @config ||= config_for self
           @chef ||= ::Chef::Config.from_file(File.expand_path(@config[:knife]))
-          #@chef   ||= begin
-          #  if @config["knife"]
-          #    ::Ridley.from_chef_config(knife)
-          #  else
-          #    ::Ridley.new(@config.to_hash)
-          #  end
-          #end
         end
 
         def config
