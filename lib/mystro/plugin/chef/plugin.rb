@@ -1,6 +1,5 @@
 require "mystro-common"
 require "chef"
-require "ridley"
 
 Ridley::Logging.logger.level = Logger.const_get 'ERROR'
 
