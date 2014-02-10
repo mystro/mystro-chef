@@ -9,7 +9,7 @@ class Jobs::Chef::Roles < Job
             description: url,
             internal: false
         }
-        r = Role.where(name: name).first || Role.create(name: name)
+        r = MystroChef::Role.where(name: name).first || MystroChef::Role.create(name: name)
         r.update_attributes(d)
       end
       info "complete"

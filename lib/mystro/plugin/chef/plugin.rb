@@ -8,10 +8,14 @@ module Mystro
 
       register(
           ui: {
-              roles: "Jobs::Chef::Roles"
+              latest:   "/plugins/chef",
           },
-          schedule: {},
-          jobs: []
+          schedule: {
+              chef: "*/10 * * * *",
+          },
+          jobs: [
+              "Jobs::Chef::Roles",
+          ]
       )
 
       class << self
