@@ -7,7 +7,9 @@ module Mystro
       include Mystro::Plugin::Base
 
       register(
-          ui: {},
+          ui: {
+              roles: "Jobs::Chef::Roles"
+          },
           schedule: {},
           jobs: []
       )
@@ -59,9 +61,14 @@ module Mystro
           ::Chef::Environment.list
         end
 
-        def clients_list
+        def client_list
           configure
           ::Chef::ApiClient.list
+        end
+
+        def client_by_name(name)
+          list = client_list
+          list.select {|k, v| k =~ /^#{name}/}
         end
 
         def client_delete(name)
@@ -79,6 +86,11 @@ module Mystro
           configure
           # TODO: better error handling
           ::Chef::Node.list
+        end
+
+        def node_by_name(name)
+          list = node_list
+          list.select {|k, v| k =~ /^#{name}/}
         end
 
         def node_delete(name)
@@ -110,17 +122,23 @@ module Mystro
       #end
 
       on "compute:destroy" do |args|
-        instance = args.shift
         compute = args.shift
-        short = compute.short
-        long = compute.long
+        short = compute.name
         Mystro::Log.info "chef compute:destroy #{short}"
-        self.client_delete(compute.short)
-        self.node_delete(compute.short)
-        # delete nodes and clients, HARDER!
-        Mystro::Log.info "chef compute:destroy #{long}"
-        self.client_delete(compute.long)
-        self.node_delete(compute.long)
+        nodes = self.node_by_name(short)
+        if nodes.count == 1
+          node = nodes.first[0]
+          self.node_delete(node)
+        else
+          Mystro::Log.warn "couldn't match node: #{short}: found #{nodes.inpsect}"
+        end
+        clients = self.client_by_name(short)
+        if clients.count == 1
+          client = clients.first[0]
+          self.client_delete(client)
+        else
+          Mystro::Log.warn "couldn't match client: #{short}: found #{clients.inspect}"
+        end
       end
 
       command "chef", "test chef plugin configuration" do
@@ -129,7 +147,7 @@ module Mystro
           self.default_subcommand = "list"
           subcommand "list", "list chef clients" do
             def execute
-              list = Mystro::Plugin::Chef.clients_list
+              list = Mystro::Plugin::Chef.client_list
               rows = []
               list.each do |c|
                 rows << {name: c[0], location: c[1]}
@@ -150,6 +168,17 @@ module Mystro
           subcommand "list", "list chef nodes" do
             def execute
               list = Mystro::Plugin::Chef.node_list
+              rows = []
+              list.each do |c|
+                rows << {name: c[0], location: c[1]}
+              end
+              Mystro::Log.warn Mystro::CLI.list(%w{Name Location}, rows)
+            end
+          end
+          subcommand "search", "search chef nodes by name" do
+            parameter 'NAME', 'name to search for'
+            def execute
+              list = Mystro::Plugin::Chef.node_by_name(name)
               rows = []
               list.each do |c|
                 rows << {name: c[0], location: c[1]}
